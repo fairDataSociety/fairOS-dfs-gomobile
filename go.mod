@@ -3,6 +3,7 @@ module github.com/fairdatasociety/fairos
 go 1.17
 
 require (
+	github.com/dustin/go-humanize v1.0.0
 	github.com/fairdatasociety/fairOS-dfs v0.7.3-0.20220214112014-eef257b1976a
 	github.com/sirupsen/logrus v1.6.0
 	golang.org/x/mobile v0.0.0-20220112015953-858099ff7816
