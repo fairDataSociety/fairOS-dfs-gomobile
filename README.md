@@ -25,9 +25,7 @@ Coming soon
 ```
 
 ### How to use in android?
-```
-Point to demo app
-```
+Check out this [demo](https://github.com/fairDataSociety/fairOS-dfs-android-demo)
 
 *** The code is not fully tested. Please use [fairOS-dfs](https://github.com/fairDataSociety/fairOS-dfs) for a better experience.
 
