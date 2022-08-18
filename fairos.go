@@ -13,90 +13,86 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/fairdatasociety/fairOS-dfs/pkg/collection"
+	"github.com/fairdatasociety/fairOS-dfs/pkg/contracts"
 	"github.com/fairdatasociety/fairOS-dfs/pkg/dfs"
 	"github.com/fairdatasociety/fairOS-dfs/pkg/logging"
 	"github.com/fairdatasociety/fairOS-dfs/pkg/utils"
 	"github.com/sirupsen/logrus"
-	_ "golang.org/x/mobile/bind"
 )
 
-var api *dfs.DfsAPI
+var (
+	api           *dfs.API
+	savedPassword string
+	savedUsername string
+	sessionId     string
+)
 
-func Connect(dataDir, beeEndpoint, postageBlockId string, logLevel int) error {
+// IsConnected checks if dfs.API is already initialised or password is saved or not
+func IsConnected() bool {
+	if api == nil {
+		return false
+	}
+	if savedPassword == "" {
+		return false
+	}
+	return true
+}
+
+// Connect with a bee and initialise dfs.API
+func Connect(dataDir, beeEndpoint, postageBlockId, network, rpc string, isGatewayProxy bool, logLevel int) error {
 	logger := logging.New(os.Stdout, logrus.Level(logLevel))
 	var err error
+	var ensConfig *contracts.Config
+	switch network {
+	case "play":
+		ensConfig = contracts.PlayConfig()
+	case "testnet":
+		ensConfig = contracts.TestnetConfig()
+	case "mainnet":
+		return fmt.Errorf("not supported yet")
+	default:
+		return fmt.Errorf("unknown network")
+	}
+	ensConfig.ProviderBackend = rpc
 	api, err = dfs.NewDfsAPI(
 		dataDir,
 		beeEndpoint,
-		"",
 		postageBlockId,
+		isGatewayProxy,
+		ensConfig,
 		logger,
 	)
 	return err
 }
 
-func CreateUser(username, password string) (string, error) {
-	address, mnemonic, _, err := api.CreateUser(username, password, "", "")
-	if err != nil {
-		return "", err
-	}
-	data := map[string]string{}
-	data["address"] = address
-	data["mnemonic"] = mnemonic
-	resp, _ := json.Marshal(data)
-	return string(resp), nil
-}
-
 func LoginUser(username, password string) (string, error) {
-	ui, err := api.LoginUser(username, password, "")
+	ui, nameHash, publicKey, err := api.LoginUserV2(username, password, "")
 	if err != nil {
 		return "", err
 	}
+	sessionId = ui.GetSessionId()
+	savedPassword = password
+	savedUsername = username
 	data := map[string]string{}
-	data["sessionId"] = ui.GetSessionId()
+	data["namehash"] = nameHash
+	data["publicKey"] = publicKey
 	resp, _ := json.Marshal(data)
 	return string(resp), nil
 }
 
-func ImportUserWithAddress(username, password, address string) (string, error) {
-	ui, err := api.ImportUserUsingAddress(username, password, address, "")
-	if err != nil {
-		return "", err
-	}
-	resp, _ := json.Marshal(ui)
-	return string(resp), err
+func IsUserPresent(username string) bool {
+	return api.IsUserNameAvailableV2(username)
 }
 
-func ImportUserWithMnemonic(username, password, mnemonic string) (string, error) {
-	ui, err := api.ImportUserUsingMnemonic(username, password, mnemonic, "")
-	if err != nil {
-		return "", err
-	}
-	resp, _ := json.Marshal(ui)
-	return string(resp), err
+func IsUserLoggedIn() bool {
+	return api.IsUserLoggedIn(savedUsername)
 }
 
-func IsUserPresent(username string) (string, error) {
-	present := api.IsUserNameAvailable(username)
-	data := map[string]bool{}
-	data["present"] = present
-	resp, _ := json.Marshal(data)
-	return string(resp), nil
-}
-
-func IsUserLoggedIn(username string) (string, error) {
-	present := api.IsUserLoggedIn(username)
-	data := map[string]bool{}
-	data["loggedin"] = present
-	resp, _ := json.Marshal(data)
-	return string(resp), nil
-}
-
-func LogoutUser(sessionId string) error {
+func LogoutUser() error {
 	return api.LogoutUser(sessionId)
 }
 
-func ExportUser(sessionId string) (string, error) {
+func ExportUser() (string, error) {
 	name, address, err := api.ExportUser(sessionId)
 	if err != nil {
 		return "", err
@@ -108,11 +104,11 @@ func ExportUser(sessionId string) (string, error) {
 	return string(resp), nil
 }
 
-func DeleteUser(sessionId, password string) error {
-	return api.DeleteUser(password, sessionId)
+func DeleteUser() error {
+	return api.DeleteUserV2(savedPassword, sessionId)
 }
 
-func StatUser(sessionId string) (string, error) {
+func StatUser() (string, error) {
 	stat, err := api.GetUserStat(sessionId)
 	if err != nil {
 		return "", err
@@ -121,38 +117,44 @@ func StatUser(sessionId string) (string, error) {
 	return string(resp), nil
 }
 
-func NewPod(sessionId, podName, password string) (string, error) {
-	_, err := api.CreatePod(podName, password, sessionId)
+func NewPod(podName string) (string, error) {
+	_, err := api.CreatePod(podName, savedPassword, sessionId)
 	if err != nil {
 		return "", err
 	}
 	return "pod created successfully", nil
 }
 
-func PodOpen(sessionId, podName, password string) (string, error) {
-	_, err := api.OpenPod(podName, password, sessionId)
+func PodOpen(podName string) (string, error) {
+	_, err := api.OpenPod(podName, savedPassword, sessionId)
 	if err != nil {
 		return "", err
 	}
 	return "pod created successfully", nil
 }
 
-func PodClose(sessionId, podName string) error {
+func PodClose(podName string) error {
 	return api.ClosePod(podName, sessionId)
 }
 
-func PodDelete(sessionId, podName, password string) error {
-	return api.DeletePod(podName, password, sessionId)
+func PodDelete(podName string) error {
+	return api.DeletePod(podName, savedPassword, sessionId)
 }
 
-func PodSync(sessionId, podName string) error {
+func PodSync(podName string) error {
 	return api.SyncPod(podName, sessionId)
 }
 
-func PodList(sessionId string) (string, error) {
-	ownPods, sharedPods, err :=  api.ListPods(sessionId)
+func PodList() (string, error) {
+	ownPods, sharedPods, err := api.ListPods(sessionId)
 	if err != nil {
 		return "", err
+	}
+	if ownPods == nil {
+		ownPods = []string{}
+	}
+	if sharedPods == nil {
+		sharedPods = []string{}
 	}
 	data := map[string]interface{}{}
 	data["pods"] = ownPods
@@ -161,7 +163,7 @@ func PodList(sessionId string) (string, error) {
 	return string(resp), nil
 }
 
-func PodStat(sessionId, podName string) (string, error) {
+func PodStat(podName string) (string, error) {
 	stat, err := api.PodStat(podName, sessionId)
 	if err != nil {
 		return "", err
@@ -170,8 +172,8 @@ func PodStat(sessionId, podName string) (string, error) {
 	return string(resp), nil
 }
 
-func PodShare(sessionId, podName, password string) (string, error) {
-	reference, err := api.PodShare(podName, password, sessionId)
+func PodShare(podName string) (string, error) {
+	reference, err := api.PodShare(podName, "", savedPassword, sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -181,19 +183,19 @@ func PodShare(sessionId, podName, password string) (string, error) {
 	return string(resp), nil
 }
 
-func PodReceive(sessionId, podSharingReference string) (string, error) {
+func PodReceive(podSharingReference string) (string, error) {
 	ref, err := utils.ParseHexReference(podSharingReference)
 	if err != nil {
 		return "", err
 	}
-	pi, err := api.PodReceive(sessionId, ref)
+	pi, err := api.PodReceive(sessionId, "", ref)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("public pod \"%s\", added as shared pod", pi.GetPodName()), nil
 }
 
-func PodReceiveInfo(sessionId, podSharingReference string) (string, error) {
+func PodReceiveInfo(podSharingReference string) (string, error) {
 	ref, err := utils.ParseHexReference(podSharingReference)
 	if err != nil {
 		return "", err
@@ -206,7 +208,7 @@ func PodReceiveInfo(sessionId, podSharingReference string) (string, error) {
 	return string(resp), nil
 }
 
-func DirPresent(sessionId, podName, dirPath string) (string, error) {
+func DirPresent(podName, dirPath string) (string, error) {
 	present, err := api.IsDirPresent(podName, dirPath, sessionId)
 	if err != nil {
 		return "", err
@@ -217,7 +219,7 @@ func DirPresent(sessionId, podName, dirPath string) (string, error) {
 	return string(resp), nil
 }
 
-func DirMake(sessionId, podName, dirPath string) (string, error) {
+func DirMake(podName, dirPath string) (string, error) {
 	err := api.Mkdir(podName, dirPath, sessionId)
 	if err != nil {
 		return "", err
@@ -225,7 +227,7 @@ func DirMake(sessionId, podName, dirPath string) (string, error) {
 	return string("directory created successfully"), nil
 }
 
-func DirRemove(sessionId, podName, dirPath string) (string, error) {
+func DirRemove(podName, dirPath string) (string, error) {
 	err := api.RmDir(podName, dirPath, sessionId)
 	if err != nil {
 		return "", err
@@ -233,19 +235,27 @@ func DirRemove(sessionId, podName, dirPath string) (string, error) {
 	return string("directory removed successfully"), nil
 }
 
-func DirList(sessionId, podName, dirPath string) (string, error) {
+func DirList(podName, dirPath string) (string, error) {
 	dirs, files, err := api.ListDir(podName, dirPath, sessionId)
 	if err != nil {
 		return "", err
 	}
+	fileList := []string{}
+	dirList := []string{}
+	for _, v := range files {
+		fileList = append(fileList, v.Name)
+	}
+	for _, v := range dirs {
+		dirList = append(dirList, v.Name)
+	}
 	data := map[string]interface{}{}
-	data["files"] = files
-	data["dirs"] = dirs
+	data["files"] = fileList
+	data["dirs"] = dirList
 	resp, _ := json.Marshal(data)
 	return string(resp), nil
 }
 
-func DirStat(sessionId, podName, dirPath string) (string, error) {
+func DirStat(podName, dirPath string) (string, error) {
 	stat, err := api.DirectoryStat(podName, dirPath, sessionId)
 	if err != nil {
 		return "", err
@@ -254,7 +264,7 @@ func DirStat(sessionId, podName, dirPath string) (string, error) {
 	return string(resp), nil
 }
 
-func FileShare(sessionId, podName, dirPath, destinationUser string) (string, error) {
+func FileShare(podName, dirPath, destinationUser string) (string, error) {
 	ref, err := api.ShareFile(podName, dirPath, destinationUser, sessionId)
 	if err != nil {
 		return "", err
@@ -265,7 +275,7 @@ func FileShare(sessionId, podName, dirPath, destinationUser string) (string, err
 	return string(resp), err
 }
 
-func FileReceive(sessionId, podName, directory, fileSharingReference string) (string, error) {
+func FileReceive(podName, directory, fileSharingReference string) (string, error) {
 	ref, err := utils.ParseSharingReference(fileSharingReference)
 	if err != nil {
 		return "", err
@@ -280,7 +290,7 @@ func FileReceive(sessionId, podName, directory, fileSharingReference string) (st
 	return string(resp), err
 }
 
-func FileReceiveInfo(sessionId, podName, fileSharingReference string) (string, error) {
+func FileReceiveInfo(podName, fileSharingReference string) (string, error) {
 	ref, err := utils.ParseSharingReference(fileSharingReference)
 	if err != nil {
 		return "", err
@@ -293,11 +303,11 @@ func FileReceiveInfo(sessionId, podName, fileSharingReference string) (string, e
 	return string(resp), err
 }
 
-func FileDelete(sessionId, podName, filePath string) error {
+func FileDelete(podName, filePath string) error {
 	return api.DeleteFile(podName, filePath, sessionId)
 }
 
-func FileStat(sessionId, podName, filePath string) (string, error) {
+func FileStat(podName, filePath string) (string, error) {
 	stat, err := api.FileStat(podName, filePath, sessionId)
 	if err != nil {
 		return "", err
@@ -306,7 +316,7 @@ func FileStat(sessionId, podName, filePath string) (string, error) {
 	return string(resp), err
 }
 
-func FileUpload(sessionId, podName, filePath, dirPath, compression, blockSize string) error {
+func FileUpload(podName, filePath, dirPath, compression, blockSize string) error {
 	fileInfo, err := os.Lstat(filePath)
 	if err != nil {
 		return err
@@ -323,7 +333,16 @@ func FileUpload(sessionId, podName, filePath, dirPath, compression, blockSize st
 	return api.UploadFile(podName, fileInfo.Name(), sessionId, fileInfo.Size(), f, dirPath, compression, uint32(bs))
 }
 
-func FileDownload(sessionId, podName, filePath  string) ([]byte, error) {
+func BlobUpload(data []byte, podName, fileName, dirPath, compression string, size, blockSize int64) error {
+	r := bytes.NewReader(data)
+	err := api.UploadFile(podName, fileName, sessionId, size, r, dirPath, compression, uint32(blockSize))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func FileDownload(podName, filePath string) ([]byte, error) {
 	r, _, err := api.DownloadFile(podName, filePath, sessionId)
 	if err != nil {
 		return nil, err
@@ -338,7 +357,7 @@ func FileDownload(sessionId, podName, filePath  string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func KVNewStore(sessionId, podName, tableName, indexType string) (string, error) {
+func KVNewStore(podName, tableName, indexType string) (string, error) {
 	if indexType == "" {
 		indexType = "string"
 	}
@@ -359,7 +378,8 @@ func KVNewStore(sessionId, podName, tableName, indexType string) (string, error)
 	}
 	return "kv store created", nil
 }
-func KVList(sessionId, podName string) (string, error) {
+
+func KVList(podName string) (string, error) {
 	collections, err := api.KVList(sessionId, podName)
 	if err != nil {
 		return "", err
@@ -367,15 +387,16 @@ func KVList(sessionId, podName string) (string, error) {
 	resp, _ := json.Marshal(collections)
 	return string(resp), err
 }
-func KVOpen(sessionId, podName, tableName string) error {
+
+func KVOpen(podName, tableName string) error {
 	return api.KVOpen(sessionId, podName, tableName)
 }
 
-func KVDelete(sessionId, podName, tableName string) error {
+func KVDelete(podName, tableName string) error {
 	return api.KVDelete(sessionId, podName, tableName)
 }
 
-func KVCount(sessionId, podName, tableName string) (string, error) {
+func KVCount(podName, tableName string) (string, error) {
 	count, err := api.KVCount(sessionId, podName, tableName)
 	if err != nil {
 		return "", err
@@ -384,11 +405,11 @@ func KVCount(sessionId, podName, tableName string) (string, error) {
 	return string(resp), err
 }
 
-func KVEntryPut(sessionId, podName, tableName, key string, value []byte) error {
+func KVEntryPut(podName, tableName, key string, value []byte) error {
 	return api.KVPut(sessionId, podName, tableName, key, value)
 }
 
-func KVEntryGet(sessionId, podName, tableName, key string) ([]byte, error) {
+func KVEntryGet(podName, tableName, key string) ([]byte, error) {
 	_, data, err := api.KVGet(sessionId, podName, tableName, key)
 	if err != nil {
 		return nil, err
@@ -396,12 +417,12 @@ func KVEntryGet(sessionId, podName, tableName, key string) ([]byte, error) {
 	return data, nil
 }
 
-func KVEntryDelete(sessionId, podName, tableName, key string) error {
-	_, err :=  api.KVDel(sessionId, podName, tableName, key)
+func KVEntryDelete(podName, tableName, key string) error {
+	_, err := api.KVDel(sessionId, podName, tableName, key)
 	return err
 }
 
-func KVLoadCSV(sessionId, podName, tableName, filePath, memory string) (string, error) {
+func KVLoadCSV(podName, tableName, filePath, memory string) (string, error) {
 	_, err := os.Lstat(filePath)
 	if err != nil {
 		return "", err
@@ -468,12 +489,12 @@ func KVLoadCSV(sessionId, podName, tableName, filePath, memory string) (string, 
 	return fmt.Sprintf("csv file loaded in to kv table (%s) with total:%d, success: %d, failure: %d rows", tableName, rowCount, successCount, failureCount), nil
 }
 
-func KVSeek(sessionId, podName, tableName, start, end string, limit int64) error {
+func KVSeek(podName, tableName, start, end string, limit int64) error {
 	_, err := api.KVSeek(sessionId, podName, tableName, start, end, limit)
 	return err
 }
 
-func KVSeekNext(sessionId, podName, tableName string) (string, error) {
+func KVSeekNext(podName, tableName string) (string, error) {
 	_, key, data, err := api.KVGetNext(sessionId, podName, tableName)
 	if err != nil {
 		return "", err
@@ -485,7 +506,7 @@ func KVSeekNext(sessionId, podName, tableName string) (string, error) {
 	return string(resp), nil
 }
 
-func DocNewStore(sessionId, podName, tableName, simpleIndexes string, mutable bool) error {
+func DocNewStore(podName, tableName, simpleIndexes string, mutable bool) error {
 	indexes := make(map[string]collection.IndexType)
 	if simpleIndexes != "" {
 		idxs := strings.Split(simpleIndexes, ",")
@@ -512,7 +533,7 @@ func DocNewStore(sessionId, podName, tableName, simpleIndexes string, mutable bo
 	return api.DocCreate(sessionId, podName, tableName, indexes, mutable)
 }
 
-func DocList(sessionId, podName string) (string, error) {
+func DocList(podName string) (string, error) {
 	collections, err := api.DocList(sessionId, podName)
 	if err != nil {
 		return "", err
@@ -521,11 +542,11 @@ func DocList(sessionId, podName string) (string, error) {
 	return string(resp), err
 }
 
-func DocOpen(sessionId, podName, tableName string) error {
-	return  api.DocOpen(sessionId, podName, tableName)
+func DocOpen(podName, tableName string) error {
+	return api.DocOpen(sessionId, podName, tableName)
 }
 
-func DocCount(sessionId, podName, tableName, expression string) (string, error) {
+func DocCount(podName, tableName, expression string) (string, error) {
 	count, err := api.DocCount(sessionId, podName, tableName, expression)
 	if err != nil {
 		return "", err
@@ -534,11 +555,11 @@ func DocCount(sessionId, podName, tableName, expression string) (string, error) 
 	return string(resp), err
 }
 
-func DocDelete(sessionId, podName, tableName string) error {
+func DocDelete(podName, tableName string) error {
 	return api.DocDelete(sessionId, podName, tableName)
 }
 
-func DocFind(sessionId, podName, tableName, expression string, limit int) (string, error) {
+func DocFind(podName, tableName, expression string, limit int) (string, error) {
 	count, err := api.DocFind(sessionId, podName, tableName, expression, limit)
 	if err != nil {
 		return "", err
@@ -547,7 +568,7 @@ func DocFind(sessionId, podName, tableName, expression string, limit int) (strin
 	return string(resp), err
 }
 
-func DocEntryPut(sessionId, podName, tableName, value string) error {
+func DocEntryPut(podName, tableName, value string) error {
 	return api.DocPut(sessionId, podName, tableName, []byte(value))
 }
 
@@ -555,7 +576,7 @@ type DocGetResponse struct {
 	Doc []byte `json:"doc"`
 }
 
-func DocEntryGet(sessionId, podName, tableName, id string) (string, error) {
+func DocEntryGet(podName, tableName, id string) (string, error) {
 	data, err := api.DocGet(sessionId, podName, tableName, id)
 	if err != nil {
 		return "", err
@@ -567,11 +588,11 @@ func DocEntryGet(sessionId, podName, tableName, id string) (string, error) {
 	return string(resp), err
 }
 
-func DocEntryDelete(sessionId, podName, tableName, id string) error {
+func DocEntryDelete(podName, tableName, id string) error {
 	return api.DocDel(sessionId, podName, tableName, id)
 }
 
-func DocLoadJson(sessionId, podName, tableName, filePath string) (string, error) {
+func DocLoadJson(podName, tableName, filePath string) (string, error) {
 	_, err := os.Lstat(filePath)
 	if err != nil {
 		return "", err
@@ -616,6 +637,6 @@ func DocLoadJson(sessionId, podName, tableName, filePath string) (string, error)
 	return fmt.Sprintf("json file loaded in to document db (%s) with total:%d, success: %d, failure: %d rows", tableName, rowCount, successCount, failureCount), nil
 }
 
-func DocIndexJson(sessionId, podName, tableName, filePath string) error {
+func DocIndexJson(podName, tableName, filePath string) error {
 	return api.DocIndexJson(sessionId, podName, tableName, filePath)
 }
