@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fairdatasociety/fairOS-dfs v0.8.2-rc4
+	github.com/fairdatasociety/fairOS-dfs v0.8.2-rc6.0.20220915123357-06183a193d8d
 	github.com/sirupsen/logrus v1.6.0
 )
 
