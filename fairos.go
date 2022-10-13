@@ -316,7 +316,7 @@ func FileStat(podName, filePath string) (string, error) {
 	return string(resp), err
 }
 
-func FileUpload(podName, filePath, dirPath, compression, blockSize string) error {
+func FileUpload(podName, filePath, dirPath, compression, blockSize string, overwrite bool) error {
 	fileInfo, err := os.Lstat(filePath)
 	if err != nil {
 		return err
@@ -330,12 +330,12 @@ func FileUpload(podName, filePath, dirPath, compression, blockSize string) error
 	if err != nil {
 		return err
 	}
-	return api.UploadFile(podName, fileInfo.Name(), sessionId, fileInfo.Size(), f, dirPath, compression, uint32(bs))
+	return api.UploadFile(podName, fileInfo.Name(), sessionId, fileInfo.Size(), f, dirPath, compression, uint32(bs), overwrite)
 }
 
-func BlobUpload(data []byte, podName, fileName, dirPath, compression string, size, blockSize int64) error {
+func BlobUpload(data []byte, podName, fileName, dirPath, compression string, size, blockSize int64, overwrite bool) error {
 	r := bytes.NewReader(data)
-	err := api.UploadFile(podName, fileName, sessionId, size, r, dirPath, compression, uint32(blockSize))
+	err := api.UploadFile(podName, fileName, sessionId, size, r, dirPath, compression, uint32(blockSize), overwrite)
 	if err != nil {
 		return err
 	}
