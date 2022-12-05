@@ -92,18 +92,6 @@ func LogoutUser() error {
 	return api.LogoutUser(sessionId)
 }
 
-func ExportUser() (string, error) {
-	name, address, err := api.ExportUser(sessionId)
-	if err != nil {
-		return "", err
-	}
-	data := map[string]string{}
-	data["username"] = name
-	data["address"] = address
-	resp, _ := json.Marshal(data)
-	return string(resp), nil
-}
-
 func DeleteUser() error {
 	return api.DeleteUserV2(savedPassword, sessionId)
 }
@@ -118,7 +106,7 @@ func StatUser() (string, error) {
 }
 
 func NewPod(podName string) (string, error) {
-	_, err := api.CreatePod(podName, savedPassword, sessionId)
+	_, err := api.CreatePod(podName, sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -126,7 +114,7 @@ func NewPod(podName string) (string, error) {
 }
 
 func PodOpen(podName string) (string, error) {
-	_, err := api.OpenPod(podName, savedPassword, sessionId)
+	_, err := api.OpenPod(podName, sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +126,7 @@ func PodClose(podName string) error {
 }
 
 func PodDelete(podName string) error {
-	return api.DeletePod(podName, savedPassword, sessionId)
+	return api.DeletePod(podName, sessionId)
 }
 
 func PodSync(podName string) error {
@@ -173,7 +161,7 @@ func PodStat(podName string) (string, error) {
 }
 
 func PodShare(podName string) (string, error) {
-	reference, err := api.PodShare(podName, "", savedPassword, sessionId)
+	reference, err := api.PodShare(podName, "", sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -295,7 +283,7 @@ func FileReceiveInfo(podName, fileSharingReference string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	receiveInfo, err := api.ReceiveInfo(podName, sessionId, ref)
+	receiveInfo, err := api.ReceiveInfo(sessionId, ref)
 	if err != nil {
 		return "", err
 	}
