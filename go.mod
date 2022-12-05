@@ -1,10 +1,10 @@
 module github.com/fairdatasociety/fairos
 
-go 1.17
+go 1.18
 
 require (
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fairdatasociety/fairOS-dfs v0.8.2-rc9
+	github.com/fairdatasociety/fairOS-dfs v0.9.0-rc9
 	github.com/sirupsen/logrus v1.6.0
 )
 
@@ -41,6 +41,7 @@ require (
 	github.com/multiformats/go-multihash v0.1.0 // indirect
 	github.com/multiformats/go-varint v0.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/plexsysio/taskmanager v0.0.0-20211220123746-de5ebdd49ae2 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
@@ -50,11 +51,13 @@ require (
 	github.com/wealdtech/go-ens/v3 v3.5.3 // indirect
 	github.com/wealdtech/go-multicodec v1.4.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/mobile v0.0.0-20221012134814-c746ac228303 // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
-	golang.org/x/text v0.3.7 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
+	golang.org/x/mobile v0.0.0-20221110043201-43a038452099 // indirect
+	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
+	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
