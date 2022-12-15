@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fairdatasociety/fairOS-dfs v0.9.0-rc9
+	github.com/fairdatasociety/fairOS-dfs v0.9.1-rc3
 	github.com/sirupsen/logrus v1.6.0
 )
 
@@ -15,8 +15,8 @@ require (
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
-	github.com/ethereum/go-ethereum v1.10.18 // indirect
-	github.com/ethersphere/bee v1.7.0 // indirect
+	github.com/ethereum/go-ethereum v1.10.26 // indirect
+	github.com/ethersphere/bee v1.9.0 // indirect
 	github.com/ethersphere/bmt v0.1.4 // indirect
 	github.com/fairdatasociety/fairOS-dfs-utils v0.0.0-20220208153721-e0f8b5b25222 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -54,10 +54,12 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/mobile v0.0.0-20221110043201-43a038452099 // indirect
+	golang.org/x/mod v0.6.0 // indirect
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/tools v0.2.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
