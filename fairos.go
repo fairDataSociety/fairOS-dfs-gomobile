@@ -39,7 +39,7 @@ func IsConnected() bool {
 }
 
 // Connect with a bee and initialise dfs.API
-func Connect(dataDir, beeEndpoint, postageBlockId, network, rpc string, isGatewayProxy bool, logLevel int) error {
+func Connect(beeEndpoint, postageBlockId, network, rpc string, logLevel int) error {
 	logger := logging.New(os.Stdout, logrus.Level(logLevel))
 	var err error
 	var ensConfig *contracts.Config
@@ -55,10 +55,8 @@ func Connect(dataDir, beeEndpoint, postageBlockId, network, rpc string, isGatewa
 	}
 	ensConfig.ProviderBackend = rpc
 	api, err = dfs.NewDfsAPI(
-		dataDir,
 		beeEndpoint,
 		postageBlockId,
-		isGatewayProxy,
 		ensConfig,
 		logger,
 	)
@@ -158,6 +156,10 @@ func PodStat(podName string) (string, error) {
 	}
 	resp, _ := json.Marshal(stat)
 	return string(resp), nil
+}
+
+func IsPodPresent(podName string) bool {
+	return api.IsPodExist(podName, sessionId)
 }
 
 func PodShare(podName string) (string, error) {
