@@ -28,8 +28,6 @@ jobs:
           unzip sdk-tools.zip -d $HOME/android-sdk
           echo "y" | $HOME/android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "build-tools;30.0.3"
           export PATH=$PATH:$HOME/android-sdk/platform-tools
-      - name: Force NDK version
-        run: echo "y" | $HOME/android-sdk/cmdline-tools/bin/sdkmanager --install "ndk;25.1.8937393" | grep -v = || true
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -41,3 +39,7 @@ jobs:
         run: |
           gomobile init 
           gomobile bind -androidapi 21 -o fairos.aar -target=android github.com/fairdatasociety/fairos
+      - uses: actions/upload-artifact@v3
+        with:
+          name: fairos.aar
+          path: fairos.aar
