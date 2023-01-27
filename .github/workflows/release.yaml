@@ -23,7 +23,11 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+        run: |
+          curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip sdk-tools.zip -d $HOME/android-sdk
+          echo "y" | $HOME/android-sdk/tools/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "build-tools;30.0.3"
+          export PATH=$PATH:$HOME/android-sdk/platform-tools
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -31,5 +35,5 @@ jobs:
       - name: Install gomobile
         run: go install golang.org/x/mobile/cmd/gomobile@latest
 
-      - name: Build android arr
+      - name: Build android aar
         run: go generate
