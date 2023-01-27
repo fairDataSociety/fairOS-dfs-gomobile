@@ -1,6 +1,6 @@
 package fairos
 
-//go:generate gomobile bind -o fairos.aar -target=android github.com/fairdatasociety/fairos
+//go:generate gomobile bind -androidapi 21 -o fairos.aar -target=android github.com/fairdatasociety/fairos
 
 import (
 	"bufio"
@@ -18,6 +18,7 @@ import (
 	"github.com/fairdatasociety/fairOS-dfs/pkg/logging"
 	"github.com/fairdatasociety/fairOS-dfs/pkg/utils"
 	"github.com/sirupsen/logrus"
+	_ "golang.org/x/mobile/bind"
 )
 
 var (
@@ -325,11 +326,7 @@ func FileUpload(podName, filePath, dirPath, compression, blockSize string, overw
 
 func BlobUpload(data []byte, podName, fileName, dirPath, compression string, size, blockSize int64, overwrite bool) error {
 	r := bytes.NewReader(data)
-	err := api.UploadFile(podName, fileName, sessionId, size, r, dirPath, compression, uint32(blockSize), overwrite)
-	if err != nil {
-		return err
-	}
-	return nil
+	return api.UploadFile(podName, fileName, sessionId, size, r, dirPath, compression, uint32(blockSize), overwrite)
 }
 
 func FileDownload(podName, filePath string) ([]byte, error) {
