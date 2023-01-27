@@ -29,7 +29,7 @@ jobs:
           echo "y" | $HOME/android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "build-tools;30.0.3"
           export PATH=$PATH:$HOME/android-sdk/platform-tools
       - name: Force NDK version
-        run: echo "y" | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;23.1.7779620" | grep -v = || true
+        run: echo "y" | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;25.1.8937393" | grep -v = || true
 
       - name: Checkout code
         uses: actions/checkout@v3
