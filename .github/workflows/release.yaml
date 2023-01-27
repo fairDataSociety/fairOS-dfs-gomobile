@@ -38,4 +38,6 @@ jobs:
         run: go install golang.org/x/mobile/cmd/gomobile@latest
 
       - name: Build android aar
-        run: gomobile bind -androidapi 21 -o fairos.aar -target=android github.com/fairdatasociety/fairos
+        run: |
+          gomobile init 
+          gomobile bind -androidapi 21 -o fairos.aar -target=android github.com/fairdatasociety/fairos
