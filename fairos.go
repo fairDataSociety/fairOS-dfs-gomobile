@@ -1,6 +1,6 @@
 package fairos
 
-//go:generate gomobile bind -o fairos.aar -target=android github.com/fairdatasociety/fairos
+//go:generate gomobile bind -androidapi 21 -o fairos.aar -target=android github.com/fairdatasociety/fairos
 
 import (
 	"bufio"
