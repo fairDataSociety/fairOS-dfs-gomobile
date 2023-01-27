@@ -1,12 +1,15 @@
-name: Build
+name: Release
+
+defaults:
+  run:
+    shell: bash
 
 on:
   push:
-    branches:
-      - 'master'
-  pull_request:
-    branches:
+    branches-ignore:
       - '**'
+    tags:
+      - 'v*.*.*'
 
 jobs:
   build:
@@ -43,3 +46,19 @@ jobs:
         with:
           name: fairos.aar
           path: fairos.aar
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v3
+      - name: Display structure of downloaded files
+        run: ls -R
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist --config .goreleaser-mobile.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
