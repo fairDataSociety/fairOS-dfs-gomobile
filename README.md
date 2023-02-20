@@ -1,3 +1,7 @@
+# ⛔️ DEPRECATED
+
+This repository is now deprecated. We have moved to [fairOS-dfs](https://github.com/fairDataSociety/fairOS-dfs/tree/master/gomobile).
+
 # fairOS-dfs-gomobile
 
 fairos is built in a way that is supports gomobile and can be used as android or ios package.
